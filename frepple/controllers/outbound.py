@@ -1079,13 +1079,72 @@ class exporter(object):
         for k, v in self.routes.items():
             if v["name"] == "Replenish on Order (MTO)":
                 self.route_mto = k
+
+        # Teamworld: SQL query to quickly find the active products
+        product_template_ids = set()
+        self.generator.env.cr.execute("""
+            select
+                product_product.id,
+                coalesce(product_product.default_code, product_template.default_code, product_template.name->>'en_US') as name,
+                coalesce(product_product.default_code, product_template.default_code) as code,
+                product_tmpl_id,
+                product_product.volume,
+                product_product.weight,
+                (
+                  select
+                     array_agg(product_template_attribute_value_id)
+                  from product_variant_combination
+                  where product_product_id = product_product.id
+                ) as product_template_attribute_value_ids,
+                0 as price_extra
+            from product_product
+            inner join product_template
+              on product_product.product_tmpl_id = product_template.id
+              and product_template.type = 'consu'
+              and product_template.is_storable = true
+            where product_product.id in (
+                -- Product has inventory
+                select product_id
+                from stock_quant
+                where quantity > 0
+                    and location_id in (select id from stock_location where usage = 'internal')
+                union
+                -- Product has stock moves
+                select  product_id
+                from stock_move
+                where state in ('confirmed', 'waiting', 'assigned')
+                -- Product has rfq purchase order
+                union
+                select pol.product_id
+                from purchase_order_line pol
+                join purchase_order po on pol.order_id = po.id
+                where po.state in ('draft', 'sent', 'to approve', 'purchase')
+                )
+            """)
+        for i in self.generator.env.cr.fetchall():
+            self.product_product[i[0]] = {
+                "id": i[0],
+                "name": i[1],
+                "code": i[2],
+                "template": i[3],
+                "product_tmpl_id": (i[3], "x"),
+                "volume": i[4],
+                "weight": i[5],
+                "product_template_attribute_value_ids": i[6] or [],
+                "price_extra": i[7],
+            }
+            if i[3] is not None:
+                product_template_ids.add(i[3])
+
         for i in self.generator.getData(
             "product.template",
-            search=[
-                "&",
-                ("type", "not in", ("service", "combo")),
-                ("is_storable", "=", True),
-            ],
+            # Teamworld: use the list active template_ids we built earlier
+            # search=[
+            #     "&",
+            #     ("type", "not in", ("service", "combo")),
+            #     ("is_storable", "=", True),
+            # ],
+            ids=list(product_template_ids),
             fields=[
                 "sale_ok",
                 "purchase_ok",
@@ -1169,19 +1228,21 @@ class exporter(object):
 
         # Read the products
         first = True
-        for i in self.generator.getData(
-            "product.product",
-            fields=[
-                "id",
-                "name",
-                "code",
-                "product_tmpl_id",
-                "volume",
-                "weight",
-                "product_template_attribute_value_ids",
-                "price_extra",
-            ],
-        ):
+        # Teamworld: we already retrieved the products above
+        # for i in self.generator.getData(
+        #     "product.product",
+        #     fields=[
+        #         "id",
+        #         "name",
+        #         "code",
+        #         "product_tmpl_id",
+        #         "volume",
+        #         "weight",
+        #         "product_template_attribute_value_ids",
+        #         "price_extra",
+        #     ],
+        # ):
+        for i in self.product_product.values():
             if first:
                 yield "<!-- products -->\n"
                 yield "<items>\n"
@@ -1224,7 +1285,8 @@ class exporter(object):
                 ],
                 "code": i["code"],
             }
-            self.product_product[i["id"]] = prod_obj
+            # Teamworld: we already built this dict
+            # self.product_product[i["id"]] = prod_obj
             self.product_template_product[i["product_tmpl_id"][0]] = prod_obj
 
             # For make-to-order items the next line needs to XML snippet ' type="item_mto"'.
