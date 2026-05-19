@@ -303,10 +303,10 @@ class XMLController(odoo.http.Controller):
             # Generate data
             try:
                 # Option 1: read the data using the outbound.py file in the same folder
-                from odoo.addons.frepple.controllers.outbound import (
-                    exporter,
-                    Odoo_generator,
-                )
+                # from odoo.addons.frepple.controllers.outbound import (
+                #     exporter,
+                #     Odoo_generator,
+                # )
 
                 # Option 2: Read the data using outbound.py in github.
                 # This can be handy during development phase to skip redeploying the connectors after each commit.
@@ -316,12 +316,12 @@ class XMLController(odoo.http.Controller):
                 #     Using untrusted sources allows attackers to execute arbitrary code on your server, and
                 #     is a very big security risk.
                 #
-                # class_dict = load_classes_from_github(
-                #     "https://raw.githubusercontent.com/frePPLe/odoo/refs/heads/18.0/frepple/controllers/outbound.py",
-                #     ["exporter", "Odoo_generator"],
-                # )
-                # exporter = class_dict["exporter"]
-                # Odoo_generator = class_dict["Odoo_generator"]
+                class_dict = load_classes_from_github(
+                    "https://raw.githubusercontent.com/frePPLe/odoo_teamworld_fork/refs/heads/18.0/frepple/controllers/outbound.py",
+                    ["exporter", "Odoo_generator"],
+                )
+                exporter = class_dict["exporter"]
+                Odoo_generator = class_dict["Odoo_generator"]
 
                 xp = exporter(
                     Odoo_generator(req.env),
