@@ -232,9 +232,10 @@ class exporter(object):
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
         yield from self.export_items()
-        logger.debug("Exporting BOMs.")
-        if self.mode == 1:
-            yield from self.export_boms()
+        # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
+        # logger.debug("Exporting BOMs.")
+        # if self.mode == 1:
+        #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
         yield from self.export_salesorders()
         # Uncomment the following lines to create forecast models in frepple
