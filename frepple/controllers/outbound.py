@@ -223,14 +223,14 @@ class exporter(object):
         if self.mode == 1:
             logger.debug("Exporting suppliers.")
             yield from self.export_suppliers()
-            logger.debug("Exporting skills.")
-            yield from self.export_skills()
+            # logger.debug("Exporting skills.")
+            # yield from self.export_skills()
             logger.debug("Exporting workcenters.")
             yield from self.export_workcenters()
-            logger.debug("Exporting workcenterskills.")
-            yield from self.export_workcenterskills()
+            # logger.debug("Exporting workcenterskills.")
+            # yield from self.export_workcenterskills()
         logger.debug("Exporting products.")
-        yield from self.export_item_hierarchy()
+        # yield from self.export_item_hierarchy()
         yield "<!-- Testing -->\n"
         # yield from self.export_items()
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
