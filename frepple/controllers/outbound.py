@@ -231,31 +231,32 @@ class exporter(object):
             yield from self.export_workcenterskills()
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
-        yield from self.export_items()
-        # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
-        # logger.debug("Exporting BOMs.")
+        yield "<!-- Testing -->\n"
+        # yield from self.export_items()
+        # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
+        # # logger.debug("Exporting BOMs.")
+        # # if self.mode == 1:
+        # #     yield from self.export_boms()
+        # logger.debug("Exporting sales orders.")
+        # yield from self.export_salesorders()
+        # # Uncomment the following lines to create forecast models in frepple
+        # # logger.debug("Exporting forecast.")
+        # # for i in self.export_forecasts():
+        # #     yield i
         # if self.mode == 1:
-        #     yield from self.export_boms()
-        logger.debug("Exporting sales orders.")
-        yield from self.export_salesorders()
-        # Uncomment the following lines to create forecast models in frepple
-        # logger.debug("Exporting forecast.")
-        # for i in self.export_forecasts():
-        #     yield i
-        if self.mode == 1:
-            logger.debug("Exporting purchase orders.")
-            yield from self.export_purchaseorders()
-            logger.debug("Exporting manufacturing orders.")
-            yield from self.export_manufacturingorders()
-            logger.debug("Exporting reordering rules.")
-            yield from self.export_orderpoints()
+        #     logger.debug("Exporting purchase orders.")
+        #     yield from self.export_purchaseorders()
+        #     logger.debug("Exporting manufacturing orders.")
+        #     yield from self.export_manufacturingorders()
+        #     logger.debug("Exporting reordering rules.")
+        #     yield from self.export_orderpoints()
 
-            if self.has_expiry:
-                logger.debug("Exporting stock orders.")
-                yield from self.export_stockorders()
-            else:
-                logger.debug("Exporting quantities on-hand.")
-                yield from self.export_onhand()
+        #     if self.has_expiry:
+        #         logger.debug("Exporting stock orders.")
+        #         yield from self.export_stockorders()
+        #     else:
+        #         logger.debug("Exporting quantities on-hand.")
+        #         yield from self.export_onhand()
 
         # Footer
         yield "</plan>\n"
