@@ -25,6 +25,7 @@
 import json
 import logging
 import pytz
+import traceback
 from xml.sax.saxutils import quoteattr
 from datetime import datetime, timedelta
 from pytz import timezone
@@ -237,7 +238,11 @@ class exporter(object):
         # # if self.mode == 1:
         # #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
-        yield from self.export_salesorders()
+        try:
+            yield from self.export_salesorders()
+        except Exception as e:
+            yield f"<!-- Error while exporting sales orders: {e} -->\n"
+            yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
         # # for i in self.export_forecasts():
