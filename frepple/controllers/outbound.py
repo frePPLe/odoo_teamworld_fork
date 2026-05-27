@@ -247,13 +247,25 @@ class exporter(object):
         # # logger.debug("Exporting forecast.")
         # # for i in self.export_forecasts():
         # #     yield i
-        # if self.mode == 1:
-        #     logger.debug("Exporting purchase orders.")
-        #     yield from self.export_purchaseorders()
-        #     logger.debug("Exporting manufacturing orders.")
-        #     yield from self.export_manufacturingorders()
-        #     logger.debug("Exporting reordering rules.")
-        #     yield from self.export_orderpoints()
+        if self.mode == 1:
+            # try:
+            #     logger.debug("Exporting purchase orders.")
+            #     yield from self.export_purchaseorders()
+            # except Exception as e:
+            #     yield f"<!-- Error while exporting purchase orders: {e} -->\n"
+            #     yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
+            try:
+                logger.debug("Exporting manufacturing orders.")
+                yield from self.export_manufacturingorders()
+            except Exception as e:
+                yield f"<!-- Error while exporting manufacturing orders: {e} -->\n"
+                yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
+            # try:
+            #     logger.debug("Exporting reordering rules.")
+            #     yield from self.export_orderpoints()
+            # except Exception as e:
+            #     yield f"<!-- Error while exporting reordering rules: {e} -->\n"
+            #     yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
 
         #     if self.has_expiry:
         #         logger.debug("Exporting stock orders.")
@@ -2411,7 +2423,7 @@ class exporter(object):
                 if i["product_id"]
                 else None
             )
-            j = so[i["order_id"][0]]            
+            j = so[i["order_id"][0]]
             location = (
                 self.warehouses.get(j["warehouse_id"][0], None)
                 if j["warehouse_id"]
