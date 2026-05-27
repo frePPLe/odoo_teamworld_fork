@@ -1099,8 +1099,8 @@ class exporter(object):
         self.generator.env.cr.execute("""
             select
                 product_product.id,
-                coalesce(product_template.name->>'en_US', product_product.default_code, product_template.default_code) as name,
-                coalesce(product_product.default_code, product_template.default_code) as code,
+                coalesce(product_product.default_code, product_template.default_code) as name,
+                coalesce(product_template.name->>'en_US', product_product.default_code, product_template.default_code) as code,
                 product_tmpl_id,
                 product_product.volume,
                 product_product.weight,
