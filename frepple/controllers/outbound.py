@@ -230,7 +230,7 @@ class exporter(object):
             # logger.debug("Exporting workcenterskills.")
             # yield from self.export_workcenterskills()
         logger.debug("Exporting products.")
-        # yield from self.export_item_hierarchy()
+        yield from self.export_item_hierarchy()
         yield "<!-- Testing -->\n"
         # yield from self.export_items()
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
