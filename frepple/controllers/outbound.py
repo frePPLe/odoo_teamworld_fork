@@ -224,12 +224,12 @@ class exporter(object):
         if self.mode == 1:
             logger.debug("Exporting suppliers.")
             yield from self.export_suppliers()
-            # logger.debug("Exporting skills.")
-            # yield from self.export_skills()
+            logger.debug("Exporting skills.")
+            yield from self.export_skills()
             logger.debug("Exporting workcenters.")
             yield from self.export_workcenters()
-            # logger.debug("Exporting workcenterskills.")
-            # yield from self.export_workcenterskills()
+            logger.debug("Exporting workcenterskills.")
+            yield from self.export_workcenterskills()
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
         yield from self.export_items()
@@ -238,11 +238,7 @@ class exporter(object):
         # # if self.mode == 1:
         # #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
-        try:
-            yield from self.export_salesorders()
-        except Exception as e:
-            yield f"<!-- Error while exporting sales orders: {e} -->\n"
-            yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
+        yield from self.export_salesorders()
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
         # # for i in self.export_forecasts():
@@ -260,19 +256,19 @@ class exporter(object):
             except Exception as e:
                 yield f"<!-- Error while exporting manufacturing orders: {e} -->\n"
                 yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
-            # try:
-            #     logger.debug("Exporting reordering rules.")
-            #     yield from self.export_orderpoints()
-            # except Exception as e:
-            #     yield f"<!-- Error while exporting reordering rules: {e} -->\n"
-            #     yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
+            try:
+                logger.debug("Exporting reordering rules.")
+                yield from self.export_orderpoints()
+            except Exception as e:
+                yield f"<!-- Error while exporting reordering rules: {e} -->\n"
+                yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
 
-        #     if self.has_expiry:
-        #         logger.debug("Exporting stock orders.")
-        #         yield from self.export_stockorders()
-        #     else:
-        #         logger.debug("Exporting quantities on-hand.")
-        #         yield from self.export_onhand()
+            if self.has_expiry:
+                logger.debug("Exporting stock orders.")
+                yield from self.export_stockorders()
+            else:
+                logger.debug("Exporting quantities on-hand.")
+                yield from self.export_onhand()
 
         # Footer
         yield "</plan>\n"
@@ -2395,12 +2391,11 @@ class exporter(object):
         )
 
         # Get all sales orders
-        yield f"<!-- SO start A -->\n"
         so = {
             i["id"]: i
             for i in self.generator.getData(
                 "sale.order",
-                ids=[j["order_id"][0] for j in so_line if j["order_id"]],
+                ids=[j["order_id"][0] for j in so_line],
                 fields=[
                     "state",
                     "partner_id",
@@ -2411,11 +2406,8 @@ class exporter(object):
                 ],
             )
         }
-        yield f"<!-- SO start B -->\n"
 
         for i in so_line:
-            yield f"<!-- SO start C {i} -->\n"
-            yield f"<!-- Processing sales order line {i} -->\n"
             name = "%s %d" % (i["order_id"][1], i["id"])
             batch = i["order_id"][1]
             product = (
@@ -2528,7 +2520,6 @@ class exporter(object):
                         )
                         sm = stock_moves_dict.get(mv_id)
                         if sm:
-                            yield f"<!-- sm {sm} -->\n"
                             sm_product = (
                                 self.product_product.get(sm["product_id"][0], None)
                                 if sm["product_id"]
@@ -2955,7 +2946,7 @@ class exporter(object):
                                     if demand > reserved:
                                         yield '<flowplan status="confirmed" quantity="%s" date="%s"><item name=%s/></flowplan>' % (
                                             reserved - demand,
-                                            self.formatDateTime(current.date),
+                                            self.formatDateTime(component_move.date),
                                             quoteattr(consumed_item["name"]),
                                         )
                                 else:
