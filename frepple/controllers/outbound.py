@@ -1009,6 +1009,7 @@ class exporter(object):
         product.category.parent_id.complete_name -> item.owner_id
         """
         self.categories = {}
+        yield "<!-- item hierarchy -->\n"
         for i in self.generator.getData(
             "product.category",
             search=[],
@@ -1017,6 +1018,7 @@ class exporter(object):
                 "parent_id",
             ],
         ):
+            yield f"<!-- i -->\n"
             self.categories[i["id"]] = i
         first = True
         for i in self.categories:
