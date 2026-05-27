@@ -2152,7 +2152,7 @@ class exporter(object):
         # A first loop if parameter odoo.delta is less than 999.
         # We want to pick the closed sales order lines with a write date in the last odoo.delta days
         # A second loop will pick all the open sales orders over the entire horizon
-
+        yield f"<!-- SO start {self.delta} -->\n"
         if self.delta < 999:
 
             # Get all sales order lines
@@ -2188,7 +2188,7 @@ class exporter(object):
                 i["id"]: i
                 for i in self.generator.getData(
                     "sale.order",
-                    ids=[j["order_id"][0] for j in so_line],
+                    ids=[j["order_id"][0] for j in so_line if j["order_id"]],
                     fields=[
                         "state",
                         "partner_id",
@@ -2382,11 +2382,12 @@ class exporter(object):
         )
 
         # Get all sales orders
+        yield f"<!-- SO start A -->\n"
         so = {
             i["id"]: i
             for i in self.generator.getData(
                 "sale.order",
-                ids=[j["order_id"][0] for j in so_line],
+                ids=[j["order_id"][0] for j in so_line if j["order_id"]],
                 fields=[
                     "state",
                     "partner_id",
@@ -2397,8 +2398,11 @@ class exporter(object):
                 ],
             )
         }
+        yield f"<!-- SO start B -->\n"
 
         for i in so_line:
+            yield f"<!-- SO start C {i} -->\n"
+            yield f"<!-- Processing sales order line {i} -->\n"
             name = "%s %d" % (i["order_id"][1], i["id"])
             batch = i["order_id"][1]
             product = (
@@ -2406,7 +2410,7 @@ class exporter(object):
                 if i["product_id"]
                 else None
             )
-            j = so[i["order_id"][0]]
+            j = so[i["order_id"][0]]            
             location = (
                 self.warehouses.get(j["warehouse_id"][0], None)
                 if j["warehouse_id"]
@@ -2511,6 +2515,7 @@ class exporter(object):
                         )
                         sm = stock_moves_dict.get(mv_id)
                         if sm:
+                            yield f"<!-- sm {sm} -->\n"
                             sm_product = (
                                 self.product_product.get(sm["product_id"][0], None)
                                 if sm["product_id"]
