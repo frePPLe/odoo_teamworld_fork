@@ -2362,6 +2362,7 @@ class exporter(object):
         search = [
             ("product_id", "!=", False),
             ("state", "!=", "cancel"),
+            ("order_id", "!=", False),
         ]
         so_line = self.generator.getData(
             "sale.order.line",
