@@ -231,14 +231,13 @@ class exporter(object):
             # yield from self.export_workcenterskills()
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
-        yield "<!-- Testing -->\n"
         yield from self.export_items()
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
         # # logger.debug("Exporting BOMs.")
         # # if self.mode == 1:
         # #     yield from self.export_boms()
-        # logger.debug("Exporting sales orders.")
-        # yield from self.export_salesorders()
+        logger.debug("Exporting sales orders.")
+        yield from self.export_salesorders()
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
         # # for i in self.export_forecasts():
@@ -1065,7 +1064,6 @@ class exporter(object):
         """
 
         # Read the product tags
-        yield "<!-- items 0 -->\n"
         product_tags = {
             i["id"]: i["name"]
             for i in self.generator.getData("product.tag", fields=["name"])
@@ -1083,7 +1081,6 @@ class exporter(object):
             if v["name"] == "Replenish on Order (MTO)":
                 self.route_mto = k
 
-        yield "<!-- items 1 -->\n"
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
         self.generator.env.cr.execute("""
@@ -1125,7 +1122,6 @@ class exporter(object):
                 where po.state in ('draft', 'sent', 'to approve', 'purchase')
                 )
             """)
-        yield f"<!-- item count {self.generator.env.cr.rowcount} -->\n"
         for i in self.generator.env.cr.fetchall():
             self.product_product[i[0]] = {
                 "id": i[0],
@@ -1140,7 +1136,6 @@ class exporter(object):
             }
             if i[3] is not None:
                 product_template_ids.add(i[3])
-        yield "<!-- items 2 -->\n"
         for i in self.generator.getData(
             "product.template",
             # Teamworld: use the list active template_ids we built earlier
