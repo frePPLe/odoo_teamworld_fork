@@ -1094,24 +1094,12 @@ class exporter(object):
             if v["name"] == "Replenish on Order (MTO)":
                 self.route_mto = k
 
-        self.generator.env.cr.execute("""
-            select
-                product_product.default_code as prod_code, 
-                product_template.default_code as tmpl_code, 
-                product_template.name->>'en_US' as tmpl_name
-            from product_product                                      
-            inner join product_template
-            on product_product.product_tmpl_id = product_template.id
-            where product_template.id = 52428
-            """)
-        for i in self.generator.env.cr.fetchall():
-            yield f"<!-- pg_attribute: {i} -->\n"
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
         self.generator.env.cr.execute("""
             select
                 product_product.id,
-                coalesce(product_product.default_code, product_template.default_code, product_template.name->>'en_US') as name,
+                coalesce(product_template.name->>'en_US', product_product.default_code, product_template.default_code) as name,
                 coalesce(product_product.default_code, product_template.default_code) as code,
                 product_tmpl_id,
                 product_product.volume,
@@ -1196,8 +1184,6 @@ class exporter(object):
         # To use short names, the internal reference (or the name when no internal reference is defined)
         # needs to be unique
         use_short_names = True
-        yield f"<!-- checked if we can use short names {use_short_names} -->\n"
-
         self.generator.env.cr.execute(
             """
             select count(*) from
