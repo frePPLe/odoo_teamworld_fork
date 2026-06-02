@@ -3233,6 +3233,7 @@ class exporter(object):
                 <stringproperty name="design_ids" value=%s/>
                 <stringproperty name="pms_code_char" value=%s/>
                 <stringproperty name="designers_ids" value=%s/>
+                <stringproperty name="log_note" value=%s/>
                """ % (
                 quoteattr(i.name),
                 "batch=%s " % quoteattr(batch) if batch else "",
@@ -3250,11 +3251,12 @@ class exporter(object):
                     if self.manage_work_orders or i.state in ("confirmed", "draft")
                     else "confirmed"
                 ),
-                1 if i.is_rush_order else 0,
+                "true" if i.is_rush_order else "false",
                 quoteattr(i.predefined_artwork or ""),
-                quoteattr(str(i.design_ids)),
+                quoteattr(",".join(str(d.name) for d in i.design_ids)),
                 quoteattr(i.pms_code_char or ""),
-                quoteattr(str(i.designers_ids)),
+                quoteattr(",".join(str(d.name) for d in i.designers_ids)),
+                quoteattr(i.log_note or ""),
             )
 
             if not self.manage_work_orders or not getattr(i, "workorder_ids", None):
