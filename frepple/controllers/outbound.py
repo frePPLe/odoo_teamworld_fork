@@ -244,12 +244,12 @@ class exporter(object):
         # # for i in self.export_forecasts():
         # #     yield i
         if self.mode == 1:
-            # try:
-            #     logger.debug("Exporting purchase orders.")
-            #     yield from self.export_purchaseorders()
-            # except Exception as e:
-            #     yield f"<!-- Error while exporting purchase orders: {e} -->\n"
-            #     yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
+            try:
+                logger.debug("Exporting purchase orders.")
+                yield from self.export_purchaseorders()
+            except Exception as e:
+                yield f"<!-- Error while exporting purchase orders: {e} -->\n"
+                yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
             try:
                 logger.debug("Exporting manufacturing orders.")
                 yield from self.export_manufacturingorders()
