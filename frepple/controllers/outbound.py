@@ -3159,6 +3159,7 @@ class exporter(object):
 
         yield "<!-- manufacturing orders in progress -->\n"
         yield "<operationplans>\n"
+        first = True
         for i in self.generator.getData(
             "mrp.production",
             # Option 1: import only the odoo status from "confirmed" onwards
@@ -3167,6 +3168,9 @@ class exporter(object):
             # search=[("state", "in", ["draft", "progress", "confirmed", "to_close"])],
             object=True,
         ):
+            if first:
+                first = False
+                logger.error("Fields on MO: %s" % sorted(i._fields.keys()))
             # Filter out irrelevant manufacturing orders
             location = self.map_locations.get(i.location_dest_id.id, None)
             if not location:
