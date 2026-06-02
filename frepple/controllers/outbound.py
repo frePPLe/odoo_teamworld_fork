@@ -3050,12 +3050,14 @@ class exporter(object):
                         batch = None
 
                     # Check if this is a subcontracting purchase order line
-                    bom = self.generator.env["mrp.bom"]._bom_subcontract_find(
-                        i.product_id,
-                        company_id=i.company_id.id,
-                        bom_type="subcontract",
-                        subcontractor=j.partner_id,
-                    )
+                    # TeamWorld: no subcontracting
+                    # bom = self.generator.env["mrp.bom"]._bom_subcontract_find(
+                    #     i.product_id,
+                    #     company_id=i.company_id.id,
+                    #     bom_type="subcontract",
+                    #     subcontractor=j.partner_id,
+                    # )
+                    bom = None 
                     if bom:
                         # Subcontracting purchase order line, mapped as a manufacturing order in frepple
                         date_start = None
