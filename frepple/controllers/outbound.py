@@ -3170,7 +3170,7 @@ class exporter(object):
         ):
             if first:
                 first = False
-                logger.error("Fields on MO: %s" % sorted(i._fields.keys()))
+                yield "<!-- Fields on MO: %s -->\n" % sorted(i._fields.keys())
             # Filter out irrelevant manufacturing orders
             location = self.map_locations.get(i.location_dest_id.id, None)
             if not location:
