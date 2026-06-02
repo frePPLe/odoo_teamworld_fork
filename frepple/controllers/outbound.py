@@ -3159,7 +3159,6 @@ class exporter(object):
 
         yield "<!-- manufacturing orders in progress -->\n"
         yield "<operationplans>\n"
-        first = True
         for i in self.generator.getData(
             "mrp.production",
             # Option 1: import only the odoo status from "confirmed" onwards
@@ -3168,9 +3167,6 @@ class exporter(object):
             # search=[("state", "in", ["draft", "progress", "confirmed", "to_close"])],
             object=True,
         ):
-            if first:
-                first = False
-                yield "<!-- Fields on MO: %s -->\n" % sorted(i._fields.keys())
             # Filter out irrelevant manufacturing orders
             location = self.map_locations.get(i.location_dest_id.id, None)
             if not location:
@@ -3229,7 +3225,13 @@ class exporter(object):
                 batch = None
 
             # Create a record for the MO
-            yield '<operationplan type="MO" reference=%s %s%s="%s" quantity="%s" status="%s">\n' % (
+            yield """<operationplan type="MO" reference=%s %s%s="%s" quantity="%s" status="%s">
+                <booleanproperty name="is_rush_order" value="%s"/>
+                <stringproperty name="predefined_artwork" value=%s/>
+                <stringproperty name="design_ids" value=%s/>
+                <stringproperty name="pms_code_char" value=%s/>
+                <stringproperty name="designers_ids" value=%s/>
+               """ % (
                 quoteattr(i.name),
                 "batch=%s " % quoteattr(batch) if batch else "",
                 (
@@ -3246,6 +3248,11 @@ class exporter(object):
                     if self.manage_work_orders or i.state in ("confirmed", "draft")
                     else "confirmed"
                 ),
+                1 if i.is_rush_order else 0,
+                quoteattr(i.predefined_artwork or ""),
+                quoteattr(str(i.design_ids)),
+                quoteattr(i.pms_code_char or ""),
+                quoteattr(str(i.designers_ids)),
             )
 
             if not self.manage_work_orders or not getattr(i, "workorder_ids", None):
