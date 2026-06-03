@@ -1087,16 +1087,15 @@ class exporter(object):
         self.product_template_product = {}
         self.product_templates = {}
         self.routes = {
-            i.id: i for i in self.generator.getData("stock.route", object=True)# fields=["name"])
+            i.id: i
+            for i in self.generator.getData(
+                "stock.route", object=True
+            )  # fields=["name"])
         }
-        self.route_mto = None
-        first = True
+        self.routes_mto = []
         for k, v in self.routes.items():
-            if first:
-                yield "<!-- route %s: %s -->\n" % (v.name, v.read()[0])
-                first = False
-            if v.name == "Replenish on Order (MTO)":
-                self.route_mto = k
+            if v.is_on_demand:
+                self.routes_mto.append(k)
 
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
@@ -1323,7 +1322,11 @@ class exporter(object):
                 / self.convert_qty_uom(1.0, tmpl["uom_id"], i["product_tmpl_id"][0]),
                 tmpl["uom_id"][0],
                 i["id"],
-                ' type="item_mto"' if self.route_mto in tmpl["route_ids"] else "",
+                (
+                    ' type="item_mto"'
+                    if any(r in tmpl["route_ids"] for r in self.routes_mto)
+                    else ""
+                ),
                 (
                     (
                         ' shelflife="%s"'
@@ -2804,9 +2807,9 @@ class exporter(object):
                         continue
 
                     # MTO links
-                    if (
-                        self.route_mto
-                        in self.product_templates[item["template"]]["route_ids"]
+                    if any(
+                        r in self.product_templates[item["template"]]["route_ids"]
+                        for r in self.routes_mto
                     ):
                         mto_so = mv.move_dest_ids.group_id.sale_id
                         batch = mto_so[0].name if mto_so else None
@@ -3031,9 +3034,9 @@ class exporter(object):
                         continue
 
                     # MTO links
-                    if (
-                        self.route_mto
-                        in self.product_templates[item["template"]]["route_ids"]
+                    if any(
+                        r in self.product_templates[item["template"]]["route_ids"]
+                        for r in self.routes_mto
                     ):
                         mto_so = i.move_dest_ids.group_id.sale_id
                         batch = mto_so[0].name if mto_so else None
@@ -3061,7 +3064,7 @@ class exporter(object):
                     #     bom_type="subcontract",
                     #     subcontractor=j.partner_id,
                     # )
-                    bom = None 
+                    bom = None
                     if bom:
                         # Subcontracting purchase order line, mapped as a manufacturing order in frepple
                         date_start = None
@@ -3217,11 +3220,12 @@ class exporter(object):
                 continue
 
             # Get MTO link
-            if (
-                self.route_mto
+            if any(
+                r
                 in self.product_templates[
                     self.product_product[i.product_id.id]["template"]
                 ]["route_ids"]
+                for r in self.routes_mto
             ):
                 batch = self.getBatch(i)
                 if not batch:
