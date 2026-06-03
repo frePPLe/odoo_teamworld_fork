@@ -1087,11 +1087,15 @@ class exporter(object):
         self.product_template_product = {}
         self.product_templates = {}
         self.routes = {
-            i["id"]: i for i in self.generator.getData("stock.route", fields=["name"])
+            i.id: i for i in self.generator.getData("stock.route", object=True)# fields=["name"])
         }
         self.route_mto = None
+        first = True
         for k, v in self.routes.items():
-            if v["name"] == "Replenish on Order (MTO)":
+            if first:
+                yield "<!-- route %s: %s -->\n" % (v.name, v.read()[0])
+                first = False
+            if v.name == "Replenish on Order (MTO)":
                 self.route_mto = k
 
         # Teamworld: SQL query to quickly find the active products
