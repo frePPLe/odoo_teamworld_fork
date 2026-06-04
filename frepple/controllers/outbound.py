@@ -1087,10 +1087,7 @@ class exporter(object):
         self.product_template_product = {}
         self.product_templates = {}
         self.routes = {
-            i.id: i
-            for i in self.generator.getData(
-                "stock.route", object=True
-            )  # fields=["name"])
+            i.id: i for i in self.generator.getData("stock.route", object=True)
         }
         self.routes_mto = []
         for k, v in self.routes.items():
@@ -2335,6 +2332,7 @@ class exporter(object):
                             i["product_uom"],
                             product["template"],
                         )
+                        continue
                 elif state == "done":
                     status = "closed"
                     qty = self.convert_qty_uom(
@@ -2342,6 +2340,7 @@ class exporter(object):
                         i["product_uom"],
                         product["template"],
                     )
+                    continue
 
                 else:
                     continue
@@ -2550,40 +2549,41 @@ class exporter(object):
                                 or j["date_order"]
                             )
 
-                            yield (
-                                '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
-                                # Disable the next line in frepple < 6.25
-                                '<owner name=%s policy="%s" xsi:type="demand_group"/>'
-                                "</demand>\n"
-                            ) % (
-                                quoteattr(sol_name),
-                                quoteattr(state),
-                                quoteattr(batch),
-                                (
-                                    qty - reserved_quantity
-                                    if qty - reserved_quantity > 0
-                                    else qty
-                                ),
-                                due,
-                                priority,
-                                (
-                                    qty - reserved_quantity
-                                    if j["picking_policy"] == "one"
-                                    and qty - reserved_quantity > 0
-                                    else 0.0
-                                ),
-                                "open" if qty - reserved_quantity > 0 else "closed",
-                                quoteattr(sm_product["name"]),
-                                quoteattr(customer),
-                                quoteattr(location),
-                                # Disable the next 2 lines in frepple < 6.25
-                                quoteattr(i["order_id"][1]),
-                                (
-                                    "alltogether"
-                                    if j["picking_policy"] == "one"
-                                    else "independent"
-                                ),
-                            )
+                            if qty - reserved_quantity > 0:
+                                yield (
+                                    '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
+                                    # Disable the next line in frepple < 6.25
+                                    '<owner name=%s policy="%s" xsi:type="demand_group"/>'
+                                    "</demand>\n"
+                                ) % (
+                                    quoteattr(sol_name),
+                                    quoteattr(state),
+                                    quoteattr(batch),
+                                    (
+                                        qty - reserved_quantity
+                                        if qty - reserved_quantity > 0
+                                        else qty
+                                    ),
+                                    due,
+                                    priority,
+                                    (
+                                        qty - reserved_quantity
+                                        if j["picking_policy"] == "one"
+                                        and qty - reserved_quantity > 0
+                                        else 0.0
+                                    ),
+                                    "open" if qty - reserved_quantity > 0 else "closed",
+                                    quoteattr(sm_product["name"]),
+                                    quoteattr(customer),
+                                    quoteattr(location),
+                                    # Disable the next 2 lines in frepple < 6.25
+                                    quoteattr(i["order_id"][1]),
+                                    (
+                                        "alltogether"
+                                        if j["picking_policy"] == "one"
+                                        else "independent"
+                                    ),
+                                )
                     # We are done with this line, move to the next one
                     continue
                 else:
@@ -2597,6 +2597,7 @@ class exporter(object):
                             i["product_uom"],
                             product["template"],
                         )
+                        continue
                     else:
                         status = "open"
                         qty = self.convert_qty_uom(
@@ -2613,6 +2614,7 @@ class exporter(object):
                     i["product_uom"],
                     product["template"],
                 )
+                continue
             elif state == "cancel":
                 status = "canceled"
                 qty = self.convert_qty_uom(
