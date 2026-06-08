@@ -1206,7 +1206,6 @@ class exporter(object):
             if i[0] > 0:
                 use_short_names = False
                 break
-        yield f'<!-- use_short_names" value="{use_short_names}"-->\n'
         supplierinfo_fields = [
             "product_tmpl_id",
             "product_id",
@@ -3143,10 +3142,12 @@ class exporter(object):
         for related_mo in mo._get_sources():
             if not mo_chain:
                 batch = self.getBatch(related_mo, [mo.id])
+                if batch:
+                    return batch
             elif related_mo.id not in mo_chain:
                 batch = self.getBatch(related_mo, mo_chain + [mo.id])
-            if batch:
-                return batch
+                if batch:
+                    return batch
         if mo_chain:
             # The MTO chain ends at a (manually created) MO.
             return mo.name
