@@ -2136,6 +2136,9 @@ class exporter(object):
                 ],
             )
         }
+        for i in stock_moves_dict.values():
+            if i.product_id and i.product_id[0] == 1806715:
+                yield f"<!-- mv {i} -->\n" 
 
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
@@ -2394,6 +2397,9 @@ class exporter(object):
                 "rental_pickup_date",
             ],
         )
+        for s in so_line:
+            if s["order_id"] and s["product_id"][0] == 1806715:
+                yield f"<!-- so_line {s} -->\n"
 
         # Get all sales orders
         so = {
