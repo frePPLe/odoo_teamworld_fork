@@ -1094,6 +1094,32 @@ class exporter(object):
             if v.is_on_demand:
                 self.routes_mto.append(k)
 
+        for p in self.generator.getData(
+            "product.product",
+            ids=[1311808],
+            fields=[
+                "id",
+                "name",
+                "default_code",
+                "product_tmpl_id",
+                "active",
+                "type",
+            ],
+        ):
+            tmpl_data = list(self.generator.getData(
+                "product.template",
+                ids=[p["product_tmpl_id"][0]],
+                fields=["name", "default_code"],
+            ))
+            tmpl = tmpl_data[0] if tmpl_data else {}
+            print(
+                f"<!-- TEST product {p['id']}: name={p['name']!r}"
+                f" default_code={p['default_code']!r}"
+                f" active={p['active']!r} type={p['type']!r}"
+                f" | template name={tmpl.get('name')!r}"
+                f" template default_code={tmpl.get('default_code')!r} -->"
+            )
+
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
         self.generator.env.cr.execute("""
@@ -2767,7 +2793,8 @@ class exporter(object):
             )
         }
 
-        yield "<!-- open purchase orders -->\n"
+        yield f"<!-- open purchase orders {len(po_line)} -->\n"
+        raise StopIteration("Debug stop")
         yield "<operationplans>\n"
         for i in po_line.values():
             location = self.warehouses.get(
