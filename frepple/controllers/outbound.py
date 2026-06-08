@@ -1125,7 +1125,7 @@ class exporter(object):
         self.generator.env.cr.execute("""
             select
                 product_product.id,
-                coalesce(product_template.name->>'en_US', product_product.default_code, product_template.default_code) as name,
+                coalesce(product_product.default_code, product_template.name->>'en_US') as name,
                 coalesce(product_product.default_code, product_template.default_code) as code,
                 product_tmpl_id,
                 product_product.volume,
@@ -2783,7 +2783,8 @@ class exporter(object):
                             "bid",
                             # "confirmed",  # Not a standard state any longer in odoo 18
                             "cancel",
-                            # "done",  # Do NOT exclude done purchase orders! They can still have pending moves to receive the material.
+                            # teamworld: exclude done POs anyway
+                            "done",  # Do NOT exclude done purchase orders! They can still have pending moves to receive the material.
                         ),
                     ),
                     ("order_id.state", "=", False),
