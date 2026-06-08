@@ -1112,7 +1112,7 @@ class exporter(object):
                 fields=["name", "default_code"],
             ))
             tmpl = tmpl_data[0] if tmpl_data else {}
-            print(
+            yield (
                 f"<!-- TEST product {p['id']}: name={p['name']!r}"
                 f" default_code={p['default_code']!r}"
                 f" active={p['active']!r} type={p['type']!r}"
@@ -2793,7 +2793,7 @@ class exporter(object):
             )
         }
 
-        yield f"<!-- open purchase orders {len(po_line)} -->\n"
+        yield f"<!-- TEST open purchase orders {len(po_line)} -->\n"
         raise StopIteration("Debug stop")
         yield "<operationplans>\n"
         for i in po_line.values():
