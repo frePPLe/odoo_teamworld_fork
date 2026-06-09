@@ -2166,7 +2166,6 @@ class exporter(object):
         # A first loop if parameter odoo.delta is less than 999.
         # We want to pick the closed sales order lines with a write date in the last odoo.delta days
         # A second loop will pick all the open sales orders over the entire horizon
-        yield f"<!-- SO start {self.delta} -->\n"
         if self.delta < 999:
 
             # Get all sales order lines
@@ -3245,14 +3244,7 @@ class exporter(object):
                 batch = None
 
             # Create a record for the MO
-            yield """<operationplan type="MO" reference=%s %s%s="%s" quantity="%s" status="%s">
-                <booleanproperty name="is_rush_order" value="%s"/>
-                <stringproperty name="predefined_artwork" value=%s/>
-                <stringproperty name="design_ids" value=%s/>
-                <stringproperty name="pms_code_char" value=%s/>
-                <stringproperty name="designers_ids" value=%s/>
-                <stringproperty name="log_note" value=%s/>
-               """ % (
+            yield '<operationplan type="MO" reference=%s %s%s="%s" quantity="%s" status="%s">' % (
                 quoteattr(i.name),
                 "batch=%s " % quoteattr(batch) if batch else "",
                 (
@@ -3268,13 +3260,7 @@ class exporter(object):
                     "approved"
                     if self.manage_work_orders or i.state in ("confirmed", "draft")
                     else "confirmed"
-                ),
-                "true" if i.is_rush_order else "false",
-                quoteattr(i.predefined_artwork or ""),
-                quoteattr(",".join(str(d.name) for d in i.design_ids)),
-                quoteattr(i.pms_code_char or ""),
-                quoteattr(",".join(str(d.name) for d in i.designers_ids)),
-                quoteattr(i.log_note or ""),
+                )
             )
 
             if not self.manage_work_orders or not getattr(i, "workorder_ids", None):
@@ -3368,10 +3354,23 @@ class exporter(object):
                 yield "</operation></operationplan>"
             else:
                 # Define an operation for the MO
-                yield '<operation name=%s xsi:type="operation_routing" category="MO" priority="0"><item name=%s/><location name=%s/><suboperations>' % (
+                yield """<operation name=%s xsi:type="operation_routing" category="MO" priority="0"><item name=%s/><location name=%s/>'
+                <booleanproperty name="is_rush_order" value="%s"/>
+                <stringproperty name="predefined_artwork" value=%s/>
+                <stringproperty name="design_ids" value=%s/>
+                <stringproperty name="pms_code_char" value=%s/>
+                <stringproperty name="designers_ids" value=%s/>
+                <stringproperty name="log_note" value=%s/>
+                <suboperations>""" % (
                     quoteattr(operation),
                     quoteattr(item["name"]),
                     quoteattr(location),
+                    "true" if i.is_rush_order else "false",
+                    quoteattr(i.predefined_artwork or ""),
+                    quoteattr(",".join(str(d.name) for d in i.design_ids)),
+                    quoteattr(i.pms_code_char or ""),
+                    quoteattr(",".join(str(d.name) for d in i.designers_ids)),
+                    quoteattr(i.log_note or ""),
                 )
                 # Define operations for each WO
                 idx = 10
@@ -3393,7 +3392,14 @@ class exporter(object):
                                     (now - tm.date_start).total_seconds() / 60
                                 )
 
-                    yield '<suboperation><operation name=%s priority="%s" type="operation_fixed_time" category="WO" duration="%s"><location name=%s/><flows>' % (
+                    yield """<suboperation><operation name=%s priority="%s" type="operation_fixed_time" category="WO" duration="%s"><location name=%s/><flows>
+                        <booleanproperty name="is_rush_order" value="%s"/>
+                        <stringproperty name="predefined_artwork" value=%s/>
+                        <stringproperty name="design_ids" value=%s/>
+                        <stringproperty name="pms_code_char" value=%s/>
+                        <stringproperty name="designers_ids" value=%s/>
+                        <stringproperty name="log_note" value=%s/>
+                        """ % (
                         quoteattr("%s - %s" % (suboperation, wo.id)),
                         idx,
                         self.convert_float_time(
@@ -3401,6 +3407,12 @@ class exporter(object):
                             units="minutes",
                         ),
                         quoteattr(location),
+                        "true" if i.is_rush_order else "false",
+                        quoteattr(i.predefined_artwork or ""),
+                        quoteattr(",".join(str(d.name) for d in i.design_ids)),
+                        quoteattr(i.pms_code_char or ""),
+                        quoteattr(",".join(str(d.name) for d in i.designers_ids)),
+                        quoteattr(i.log_note or ""),
                     )
                     idx += 10
                     # dictionary needed as BOM in Odoo might have multiple lines with the same product
