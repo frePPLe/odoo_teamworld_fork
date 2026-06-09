@@ -1094,6 +1094,15 @@ class exporter(object):
             if v.is_on_demand:
                 self.routes_mto.append(k)
 
+        # Count product.template.attribute.value records
+        self.generator.env.cr.execute(
+            "SELECT count(*) FROM product_template_attribute_value"
+        )
+        ptav_count = self.generator.env.cr.fetchone()[0]
+        logger.debug(
+            "Found %d product.template.attribute.value records" % ptav_count
+        )
+        
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
         self.generator.env.cr.execute("""
@@ -1145,6 +1154,7 @@ class exporter(object):
                 "volume": i[4],
                 "weight": i[5],
                 "product_template_attribute_value_ids": i[6] or [],
+                "product_template_variant_value_ids": [],
                 "price_extra": i[7],
             }
             if i[3] is not None:
@@ -1250,6 +1260,7 @@ class exporter(object):
         #         "volume",
         #         "weight",
         #         "product_template_attribute_value_ids",
+        #         "product_template_variant_value_ids",
         #         "price_extra",
         #     ],
         # ):
@@ -1265,6 +1276,20 @@ class exporter(object):
             if i["product_template_attribute_value_ids"]:
                 if use_short_names:
                     name = i["code"] or i["name"]
+                    # description = "%s%s%s" % (
+                    #     i["name"],
+                    #     ". " if i["product_template_variant_value_ids"] else "",
+                    #     (
+                    #         ", ".join(
+                    #             [
+                    #                 variants[i]
+                    #                 for i in i["product_template_variant_value_ids"]
+                    #             ]
+                    #         )
+                    #         if i["product_template_variant_value_ids"]
+                    #         else None
+                    #     ),
+                    # )
                     description = i["name"]
                 else:
                     name = (
@@ -1272,6 +1297,16 @@ class exporter(object):
                         if i["code"]
                         else "%s %s" % (i["name"], i["id"])
                     )
+                    # description = (
+                    #     ", ".join(
+                    #         [
+                    #             variants[i]
+                    #             for i in i["product_template_variant_value_ids"]
+                    #         ]
+                    #     )
+                    #     if i["product_template_variant_value_ids"]
+                    #     else None
+                    # )
                     description = None
             # generate name and description for non-variant products
             elif i["code"]:
@@ -1304,11 +1339,7 @@ class exporter(object):
             # For make-to-order items the next line needs to XML snippet ' type="item_mto"'.
             yield '<item name=%s %s uom=%s volume="%f" weight="%f" cost="%f" subcategory="%s,%s"%s%s%s>%s\n' % (
                 quoteattr(name),
-                (
-                    ("description=%s" % (quoteattr(description),))
-                    if use_short_names
-                    else ""
-                ),
+                (("description=%s" % (quoteattr(description),)) if description else ""),
                 quoteattr(tmpl["uom_id"][1]) if tmpl["uom_id"] else "",
                 i["volume"] or 0,
                 i["weight"] or 0,
