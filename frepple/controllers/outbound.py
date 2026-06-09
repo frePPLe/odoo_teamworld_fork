@@ -1099,10 +1099,10 @@ class exporter(object):
             "SELECT count(*) FROM product_template_attribute_value"
         )
         ptav_count = self.generator.env.cr.fetchone()[0]
-        logger.debug(
-            "Found %d product.template.attribute.value records" % ptav_count
+        yield (
+            "<!-- Found %d product.template.attribute.value records -->\n" % ptav_count
         )
-        
+
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
         self.generator.env.cr.execute("""
@@ -3423,13 +3423,14 @@ class exporter(object):
                                     (now - tm.date_start).total_seconds() / 60
                                 )
 
-                    yield """<suboperation><operation name=%s priority="%s" type="operation_fixed_time" category="WO" duration="%s"><location name=%s/><flows>
+                    yield """<suboperation><operation name=%s priority="%s" type="operation_fixed_time" category="WO" duration="%s"><location name=%s/>
                         <booleanproperty name="is_rush_order" value="%s"/>
                         <stringproperty name="predefined_artwork" value=%s/>
                         <stringproperty name="design_ids" value=%s/>
                         <stringproperty name="pms_code_char" value=%s/>
                         <stringproperty name="designers_ids" value=%s/>
                         <stringproperty name="log_note" value=%s/>
+                        <flows>
                         """ % (
                         quoteattr("%s - %s" % (suboperation, wo.id)),
                         idx,
