@@ -114,6 +114,8 @@ class Odoo_generator:
         limit=None,
         offset=0,
     ):
+        PAGE_SIZE = 1000
+
         if search is None:
             search = []
         if fields is None:
@@ -123,33 +125,73 @@ class Odoo_generator:
             if invalid_fields:
                 logger.warning(f"Unavailable fields {invalid_fields} in {model} model")
         valid_fields = [f for f in fields if f in self.env[model]._fields]
+
         if ids is not None:
             if not ids:
                 return
-            if object:
-                yield from self.env[model].browse(ids)
-            else:
-                yield from self.env[model].browse(ids).read(valid_fields)
-        elif order:
-            if object:
-                yield from self.env[model].search(
-                    search, order=order, limit=limit, offset=offset
-                )
-            else:
-                yield from (
-                    self.env[model]
-                    .search(search, order=order, limit=limit, offset=offset)
-                    .read(valid_fields)
-                )
+            # Process ids in chunks of PAGE_SIZE
+            for i in range(0, len(ids), PAGE_SIZE):
+                chunk_ids = ids[i : i + PAGE_SIZE]
+                if object:
+                    yield from self.env[model].browse(chunk_ids)
+                else:
+                    yield from self.env[model].browse(chunk_ids).read(valid_fields)
         else:
-            if object:
-                yield from self.env[model].search(search, limit=limit, offset=offset)
-            else:
-                yield from (
-                    self.env[model]
-                    .search(search, limit=limit, offset=offset)
-                    .read(valid_fields)
-                )
+            # Search-based retrieval with paging
+            current_offset = offset
+            total_fetched = 0
+
+            while True:
+                # Calculate the batch size for this iteration
+                if limit is not None:
+                    remaining = limit - total_fetched
+                    if remaining <= 0:
+                        break
+                    batch_size = min(PAGE_SIZE, remaining)
+                else:
+                    batch_size = PAGE_SIZE
+
+                if order:
+                    if object:
+                        records = self.env[model].search(
+                            search, order=order, limit=batch_size, offset=current_offset
+                        )
+                    else:
+                        records = (
+                            self.env[model]
+                            .search(
+                                search,
+                                order=order,
+                                limit=batch_size,
+                                offset=current_offset,
+                            )
+                            .read(valid_fields)
+                        )
+                else:
+                    if object:
+                        records = self.env[model].search(
+                            search, limit=batch_size, offset=current_offset
+                        )
+                    else:
+                        records = (
+                            self.env[model]
+                            .search(search, limit=batch_size, offset=current_offset)
+                            .read(valid_fields)
+                        )
+
+                # Check if we got any records
+                record_count = len(records)
+                if record_count == 0:
+                    break
+
+                yield from records
+
+                total_fetched += record_count
+                current_offset += record_count
+
+                # If we got fewer records than requested, we've reached the end
+                if record_count < batch_size:
+                    break
 
 
 class exporter(object):
