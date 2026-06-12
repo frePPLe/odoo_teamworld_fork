@@ -2302,9 +2302,6 @@ class exporter(object):
                 "product_uom",
                 "order_id",
                 "move_ids",
-                "is_rental",
-                "rental_return_date",
-                "rental_pickup_date",
             ],
         ):
             try:
