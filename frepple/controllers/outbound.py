@@ -2214,6 +2214,9 @@ class exporter(object):
             ],
         )
 
+        yield f"<!-- before the so call -->\n"
+        return
+
         # Get all sales orders
         so = {
             i["id"]: i
@@ -2230,9 +2233,6 @@ class exporter(object):
                 ],
             )
         }
-
-        yield f"<!-- before the loop -->\n"
-        return
 
         for i in so_line:
             try:
