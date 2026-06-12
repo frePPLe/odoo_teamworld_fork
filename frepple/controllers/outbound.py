@@ -103,6 +103,54 @@ class Odoo_generator:
                     .read([f for f in fields if f in self.env[model]._fields])
                 )
 
+    def yieldData(
+        self,
+        model,
+        search=None,
+        order=None,
+        fields=None,
+        ids=None,
+        object=False,
+        limit=None,
+        offset=0,
+    ):
+        if search is None:
+            search = []
+        if fields is None:
+            fields = []
+        else:
+            invalid_fields = [f for f in fields if f not in self.env[model]._fields]
+            if invalid_fields:
+                logger.warning(f"Unavailable fields {invalid_fields} in {model} model")
+        valid_fields = [f for f in fields if f in self.env[model]._fields]
+        if ids is not None:
+            if not ids:
+                return
+            if object:
+                yield from self.env[model].browse(ids)
+            else:
+                yield from self.env[model].browse(ids).read(valid_fields)
+        elif order:
+            if object:
+                yield from self.env[model].search(
+                    search, order=order, limit=limit, offset=offset
+                )
+            else:
+                yield from (
+                    self.env[model]
+                    .search(search, order=order, limit=limit, offset=offset)
+                    .read(valid_fields)
+                )
+        else:
+            if object:
+                yield from self.env[model].search(search, limit=limit, offset=offset)
+            else:
+                yield from (
+                    self.env[model]
+                    .search(search, limit=limit, offset=offset)
+                    .read(valid_fields)
+                )
+
 
 class exporter(object):
     def __init__(
@@ -2196,7 +2244,10 @@ class exporter(object):
             ("state", "!=", "cancel"),
             ("order_id", "!=", False),
         ]
-        so_line = self.generator.getData(
+
+        yield f"<!-- before the so call -->\n"
+
+        for i in self.generator.yieldData(
             "sale.order.line",
             search=search,
             fields=[
@@ -2212,29 +2263,7 @@ class exporter(object):
                 "rental_return_date",
                 "rental_pickup_date",
             ],
-        )
-
-        yield f"<!-- before the so call -->\n"
-        return
-
-        # Get all sales orders
-        so = {
-            i["id"]: i
-            for i in self.generator.getData(
-                "sale.order",
-                ids=[j["order_id"][0] for j in so_line],
-                fields=[
-                    "state",
-                    "partner_id",
-                    "commitment_date",
-                    "date_order",
-                    "picking_policy",
-                    "warehouse_id",
-                ],
-            )
-        }
-
-        for i in so_line:
+        ):
             try:
                 name = "%s %d" % (i["order_id"][1], i["id"])
                 batch = i["order_id"][1]
@@ -2243,7 +2272,18 @@ class exporter(object):
                     if i["product_id"]
                     else None
                 )
-                j = so[i["order_id"][0]]
+                j = self.generator.getData(
+                    "sale.order",
+                    ids=[i["order_id"][0]],
+                    fields=[
+                        "state",
+                        "partner_id",
+                        "commitment_date",
+                        "date_order",
+                        "picking_policy",
+                        "warehouse_id",
+                    ],
+                )[0]
                 location = (
                     self.warehouses.get(j["warehouse_id"][0], None)
                     if j["warehouse_id"]
