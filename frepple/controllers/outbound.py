@@ -2257,7 +2257,6 @@ class exporter(object):
                 "state",
                 "product_id",
                 "product_uom_qty",
-                "commitment_date",
                 "product_uom",
                 "order_id",
                 "move_ids",
@@ -2303,9 +2302,7 @@ class exporter(object):
                     # Not interested in this sales order...
                     continue
                 due = self.formatDateTime(
-                    i.get("commitment_date", False)
-                    or j.get("commitment_date", False)
-                    or j["date_order"]
+                    j.get("commitment_date", False) or j["date_order"]
                 )
                 priority = 1  # We give all customer orders the same default priority
 
