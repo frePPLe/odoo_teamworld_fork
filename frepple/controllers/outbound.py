@@ -230,6 +230,9 @@ class exporter(object):
             yield from self.export_workcenters()
             logger.debug("Exporting workcenterskills.")
             yield from self.export_workcenterskills()
+
+        return  # pull until we reach the items to see where the error comes from
+
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
         yield from self.export_items()
@@ -2169,7 +2172,7 @@ class exporter(object):
         }
         for i in stock_moves_dict.values():
             if i["product_id"] and i["product_id"][0] == 1806715:
-                yield f"<!-- mv {i} -->\n" 
+                yield f"<!-- mv {i} -->\n"
 
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
@@ -3291,7 +3294,7 @@ class exporter(object):
                     "approved"
                     if self.manage_work_orders or i.state in ("confirmed", "draft")
                     else "confirmed"
-                )
+                ),
             )
 
             if not self.manage_work_orders or not getattr(i, "workorder_ids", None):
