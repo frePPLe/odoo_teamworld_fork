@@ -2162,9 +2162,6 @@ class exporter(object):
                 ],
             )
         }
-        for i in stock_moves_dict.values():
-            if i["product_id"] and i["product_id"][0] == 1806715:
-                yield f"<!-- mv {i} -->\n"
 
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
@@ -2422,9 +2419,6 @@ class exporter(object):
                 "rental_pickup_date",
             ],
         )
-        for s in so_line:
-            if s["product_id"] and s["product_id"][0] == 1806715:
-                yield f"<!-- so_line {s} -->\n"
 
         # Get all sales orders
         so = {
@@ -2444,240 +2438,250 @@ class exporter(object):
         }
 
         for i in so_line:
-            name = "%s %d" % (i["order_id"][1], i["id"])
-            batch = i["order_id"][1]
-            product = (
-                self.product_product.get(i["product_id"][0], None)
-                if i["product_id"]
-                else None
-            )
-            j = so[i["order_id"][0]]
-            location = (
-                self.warehouses.get(j["warehouse_id"][0], None)
-                if j["warehouse_id"]
-                else None
-            )
-            customer = (
-                self.map_customers.get(j["partner_id"][0], None)
-                if j["partner_id"]
-                else None
-            )
-
-            if not customer or not location or not product:
-                # Not interested in this sales order...
-                continue
-            due = self.formatDateTime(
-                i.get("commitment_date", False)
-                or j.get("commitment_date", False)
-                or j["date_order"]
-            )
-            priority = 1  # We give all customer orders the same default priority
-
-            # Possible sales order status are 'draft', 'sent', 'sale', 'done' and 'cancel'
-
-            # if no stock_move if that SO line is still open, we can consider the line closed
-            state = j.get("state", "sale")
-            if state == "sale" and not any(
-                x in stock_moves_dict and stock_moves_dict[x] not in ("cancel", "done")
-                for x in i["move_ids"]
-            ):
-                state = "done"
-                if self.delta < 999:
-                    continue
-            if state in ("draft", "sent"):
-                status = "inquiry"  # Inquiries don't reserve capacity and materials
-                # status = "quote"  # Quotes do reserve capacity and materials
-                qty = self.convert_qty_uom(
-                    i["product_uom_qty"],
-                    i["product_uom"],
-                    product["template"],
+            try:
+                name = "%s %d" % (i["order_id"][1], i["id"])
+                batch = i["order_id"][1]
+                product = (
+                    self.product_product.get(i["product_id"][0], None)
+                    if i["product_id"]
+                    else None
                 )
-            elif state == "sale" or i.get("is_rental", False):
-                if i.get("is_rental", False):
-                    if state != "sale":
-                        # We only consider open rentals, not the history of rental orders
+                j = so[i["order_id"][0]]
+                location = (
+                    self.warehouses.get(j["warehouse_id"][0], None)
+                    if j["warehouse_id"]
+                    else None
+                )
+                customer = (
+                    self.map_customers.get(j["partner_id"][0], None)
+                    if j["partner_id"]
+                    else None
+                )
+
+                if not customer or not location or not product:
+                    # Not interested in this sales order...
+                    continue
+                due = self.formatDateTime(
+                    i.get("commitment_date", False)
+                    or j.get("commitment_date", False)
+                    or j["date_order"]
+                )
+                priority = 1  # We give all customer orders the same default priority
+
+                # Possible sales order status are 'draft', 'sent', 'sale', 'done' and 'cancel'
+
+                # if no stock_move if that SO line is still open, we can consider the line closed
+                state = j.get("state", "sale")
+                if state == "sale" and not any(
+                    x in stock_moves_dict
+                    and stock_moves_dict[x] not in ("cancel", "done")
+                    for x in i["move_ids"]
+                ):
+                    state = "done"
+                    if self.delta < 999:
                         continue
-                    qty = i["product_uom_qty"]
-                    if qty <= 0:
-                        continue
+                if state in ("draft", "sent"):
+                    status = "inquiry"  # Inquiries don't reserve capacity and materials
+                    # status = "quote"  # Quotes do reserve capacity and materials
                     qty = self.convert_qty_uom(
                         i["product_uom_qty"],
                         i["product_uom"],
                         product["template"],
                     )
-                    status = "open"
-                    # We plan rentals with a maxlateness of 0. If the pickup date isn't feasible we consider
-                    # the sales order lost.
-                    yield (
-                        '<demand name=%s category="rental" maxlateness="P0D" batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
-                        '<owner name=%s policy="%s" xsi:type="demand_group"/>'
-                        "</demand>\n"
-                    ) % (
-                        quoteattr(name),
-                        quoteattr(batch),
-                        qty,
-                        i.get("rental_start_date", due),
-                        priority,
-                        qty if j["picking_policy"] == "one" and qty > 0 else 0.0,
-                        status,
-                        quoteattr(product["name"]),
-                        quoteattr(customer),
-                        quoteattr(location),
-                        quoteattr(i["order_id"][1]),
-                        (
-                            "alltogether"
-                            if j["picking_policy"] == "one"
-                            else "independent"
-                        ),
-                    )
-                    if i.get("rental_pickup_date", False):
-                        yield (
-                            "</demands><operationplans>\n"
-                            '<operationplan reference=%s %sordertype="PO" start="%s" end="%s" quantity="%f" status="confirmed">'
-                            "<item name=%s/><location name=%s/><supplier name=%s/></operationplan>\n"
-                            "</operationplans><demands>\n"
-                        ) % (
-                            quoteattr(f"Return {name}"),
-                            "batch=%s " % quoteattr(batch) if batch else "",
-                            i["rental_pickup_date"],
-                            i["rental_pickup_date"],
-                            qty,
-                            quoteattr(product["name"]),
-                            quoteattr(location),
-                            quoteattr("rental return"),
-                        )
-                    continue
-                elif i["move_ids"] and any(
-                    [mv_id in stock_moves_dict for mv_id in i["move_ids"]]
-                ):
-                    for mv_id in i["move_ids"]:
-                        sol_name = (
-                            "%s %s" % (name, mv_id) if len(i["move_ids"]) > 1 else name
-                        )
-                        sm = stock_moves_dict.get(mv_id)
-                        if sm:
-                            sm_product = (
-                                self.product_product.get(sm["product_id"][0], None)
-                                if sm["product_id"]
-                                else product
-                            )
-                            if not sm_product:
-                                continue
-                            qty = self.convert_qty_uom(
-                                sm["product_uom_qty"],
-                                sm["product_uom"],
-                                sm_product["template"],
-                            )
-                            reserved_quantity = getReservedAndDoneQuantity(
-                                sm, self.respect_reservations
-                            )
-                            if qty - reserved_quantity <= 0 and self.delta < 999:
-                                continue
-                            due = self.formatDateTime(
-                                sm["date"]
-                                or i.get("commitment_date", False)
-                                or j.get("commitment_date", False)
-                                or j["date_order"]
-                            )
-
-                            if qty - reserved_quantity > 0:
-                                yield (
-                                    '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
-                                    # Disable the next line in frepple < 6.25
-                                    '<owner name=%s policy="%s" xsi:type="demand_group"/>'
-                                    "</demand>\n"
-                                ) % (
-                                    quoteattr(sol_name),
-                                    quoteattr(state),
-                                    quoteattr(batch),
-                                    (
-                                        qty - reserved_quantity
-                                        if qty - reserved_quantity > 0
-                                        else qty
-                                    ),
-                                    due,
-                                    priority,
-                                    (
-                                        qty - reserved_quantity
-                                        if j["picking_policy"] == "one"
-                                        and qty - reserved_quantity > 0
-                                        else 0.0
-                                    ),
-                                    "open" if qty - reserved_quantity > 0 else "closed",
-                                    quoteattr(sm_product["name"]),
-                                    quoteattr(customer),
-                                    quoteattr(location),
-                                    # Disable the next 2 lines in frepple < 6.25
-                                    quoteattr(i["order_id"][1]),
-                                    (
-                                        "alltogether"
-                                        if j["picking_policy"] == "one"
-                                        else "independent"
-                                    ),
-                                )
-                    # We are done with this line, move to the next one
-                    continue
-                else:
-                    qty = i["product_uom_qty"] - i["qty_delivered"]
-                    if qty <= 0:
-                        status = "closed"
-                        if self.delta < 999:
+                elif state == "sale" or i.get("is_rental", False):
+                    if i.get("is_rental", False):
+                        if state != "sale":
+                            # We only consider open rentals, not the history of rental orders
+                            continue
+                        qty = i["product_uom_qty"]
+                        if qty <= 0:
                             continue
                         qty = self.convert_qty_uom(
                             i["product_uom_qty"],
                             i["product_uom"],
                             product["template"],
                         )
+                        status = "open"
+                        # We plan rentals with a maxlateness of 0. If the pickup date isn't feasible we consider
+                        # the sales order lost.
+                        yield (
+                            '<demand name=%s category="rental" maxlateness="P0D" batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
+                            '<owner name=%s policy="%s" xsi:type="demand_group"/>'
+                            "</demand>\n"
+                        ) % (
+                            quoteattr(name),
+                            quoteattr(batch),
+                            qty,
+                            i.get("rental_start_date", due),
+                            priority,
+                            qty if j["picking_policy"] == "one" and qty > 0 else 0.0,
+                            status,
+                            quoteattr(product["name"]),
+                            quoteattr(customer),
+                            quoteattr(location),
+                            quoteattr(i["order_id"][1]),
+                            (
+                                "alltogether"
+                                if j["picking_policy"] == "one"
+                                else "independent"
+                            ),
+                        )
+                        if i.get("rental_pickup_date", False):
+                            yield (
+                                "</demands><operationplans>\n"
+                                '<operationplan reference=%s %sordertype="PO" start="%s" end="%s" quantity="%f" status="confirmed">'
+                                "<item name=%s/><location name=%s/><supplier name=%s/></operationplan>\n"
+                                "</operationplans><demands>\n"
+                            ) % (
+                                quoteattr(f"Return {name}"),
+                                "batch=%s " % quoteattr(batch) if batch else "",
+                                i["rental_pickup_date"],
+                                i["rental_pickup_date"],
+                                qty,
+                                quoteattr(product["name"]),
+                                quoteattr(location),
+                                quoteattr("rental return"),
+                            )
+                        continue
+                    elif i["move_ids"] and any(
+                        [mv_id in stock_moves_dict for mv_id in i["move_ids"]]
+                    ):
+                        for mv_id in i["move_ids"]:
+                            sol_name = (
+                                "%s %s" % (name, mv_id)
+                                if len(i["move_ids"]) > 1
+                                else name
+                            )
+                            sm = stock_moves_dict.get(mv_id)
+                            if sm:
+                                sm_product = (
+                                    self.product_product.get(sm["product_id"][0], None)
+                                    if sm["product_id"]
+                                    else product
+                                )
+                                if not sm_product:
+                                    continue
+                                qty = self.convert_qty_uom(
+                                    sm["product_uom_qty"],
+                                    sm["product_uom"],
+                                    sm_product["template"],
+                                )
+                                reserved_quantity = getReservedAndDoneQuantity(
+                                    sm, self.respect_reservations
+                                )
+                                if qty - reserved_quantity <= 0 and self.delta < 999:
+                                    continue
+                                due = self.formatDateTime(
+                                    sm["date"]
+                                    or i.get("commitment_date", False)
+                                    or j.get("commitment_date", False)
+                                    or j["date_order"]
+                                )
+
+                                if qty - reserved_quantity > 0:
+                                    yield (
+                                        '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
+                                        # Disable the next line in frepple < 6.25
+                                        '<owner name=%s policy="%s" xsi:type="demand_group"/>'
+                                        "</demand>\n"
+                                    ) % (
+                                        quoteattr(sol_name),
+                                        quoteattr(state),
+                                        quoteattr(batch),
+                                        (
+                                            qty - reserved_quantity
+                                            if qty - reserved_quantity > 0
+                                            else qty
+                                        ),
+                                        due,
+                                        priority,
+                                        (
+                                            qty - reserved_quantity
+                                            if j["picking_policy"] == "one"
+                                            and qty - reserved_quantity > 0
+                                            else 0.0
+                                        ),
+                                        (
+                                            "open"
+                                            if qty - reserved_quantity > 0
+                                            else "closed"
+                                        ),
+                                        quoteattr(sm_product["name"]),
+                                        quoteattr(customer),
+                                        quoteattr(location),
+                                        # Disable the next 2 lines in frepple < 6.25
+                                        quoteattr(i["order_id"][1]),
+                                        (
+                                            "alltogether"
+                                            if j["picking_policy"] == "one"
+                                            else "independent"
+                                        ),
+                                    )
+                        # We are done with this line, move to the next one
                         continue
                     else:
-                        status = "open"
-                        qty = self.convert_qty_uom(
-                            qty,
-                            i["product_uom"],
-                            product["template"],
-                        )
-            elif state == "done":
-                status = "closed"
-                if self.delta < 999:
+                        qty = i["product_uom_qty"] - i["qty_delivered"]
+                        if qty <= 0:
+                            status = "closed"
+                            if self.delta < 999:
+                                continue
+                            qty = self.convert_qty_uom(
+                                i["product_uom_qty"],
+                                i["product_uom"],
+                                product["template"],
+                            )
+                            continue
+                        else:
+                            status = "open"
+                            qty = self.convert_qty_uom(
+                                qty,
+                                i["product_uom"],
+                                product["template"],
+                            )
+                elif state == "done":
+                    status = "closed"
+                    if self.delta < 999:
+                        continue
+                    qty = self.convert_qty_uom(
+                        i["product_uom_qty"],
+                        i["product_uom"],
+                        product["template"],
+                    )
                     continue
-                qty = self.convert_qty_uom(
-                    i["product_uom_qty"],
-                    i["product_uom"],
-                    product["template"],
-                )
-                continue
-            elif state == "cancel":
-                status = "canceled"
-                qty = self.convert_qty_uom(
-                    i["product_uom_qty"],
-                    i["product_uom"],
-                    product["template"],
-                )
-            else:
-                logger.warning("Unknown sales order state: %s." % (state,))
-                continue
+                elif state == "cancel":
+                    status = "canceled"
+                    qty = self.convert_qty_uom(
+                        i["product_uom_qty"],
+                        i["product_uom"],
+                        product["template"],
+                    )
+                else:
+                    logger.warning("Unknown sales order state: %s." % (state,))
+                    continue
 
-            yield (
-                '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
-                # Disable the next line in frepple < 6.25
-                '<owner name=%s policy="%s" xsi:type="demand_group"/>'
-                "</demand>\n"
-            ) % (
-                quoteattr(name),
-                quoteattr(state),
-                quoteattr(batch),
-                qty,
-                due,
-                priority,
-                qty if j["picking_policy"] == "one" and qty > 0 else 0.0,
-                status,
-                quoteattr(product["name"]),
-                quoteattr(customer),
-                quoteattr(location),
-                # Disable the next lines in frepple < 6.25
-                quoteattr(i["order_id"][1]),
-                "alltogether" if j["picking_policy"] == "one" else "independent",
-            )
+                yield (
+                    '<demand name=%s category=%s batch=%s quantity="%s" due="%s" priority="%s" minshipment="%s" status="%s"><item name=%s/><customer name=%s/><location name=%s/>'
+                    # Disable the next line in frepple < 6.25
+                    '<owner name=%s policy="%s" xsi:type="demand_group"/>'
+                    "</demand>\n"
+                ) % (
+                    quoteattr(name),
+                    quoteattr(state),
+                    quoteattr(batch),
+                    qty,
+                    due,
+                    priority,
+                    qty if j["picking_policy"] == "one" and qty > 0 else 0.0,
+                    status,
+                    quoteattr(product["name"]),
+                    quoteattr(customer),
+                    quoteattr(location),
+                    # Disable the next lines in frepple < 6.25
+                    quoteattr(i["order_id"][1]),
+                    "alltogether" if j["picking_policy"] == "one" else "independent",
+                )
+            except Exception as e:
+                yield f'<!-- error when exporting sale order line {i["order_id"][1]}  {i["id"]} --> {e}\n'
 
         yield "</demands>\n"
 
