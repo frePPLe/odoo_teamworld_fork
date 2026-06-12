@@ -288,7 +288,7 @@ class exporter(object):
         # # if self.mode == 1:
         # #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
-        # yield from self.export_salesorders()
+        yield from self.export_salesorders()
 
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
