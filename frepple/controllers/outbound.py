@@ -1098,14 +1098,13 @@ class exporter(object):
             if v.is_on_demand:
                 self.routes_mto.append(k)
 
-        # Count product.template.attribute.value records
-        self.generator.env.cr.execute(
-            "SELECT count(*) FROM product_template_attribute_value"
-        )
-        ptav_count = self.generator.env.cr.fetchone()[0]
-        yield (
-            "<!-- Found %d product.template.attribute.value records -->\n" % ptav_count
-        )
+        try:
+            ptav_count = self.generator.env[
+                "product.template.attribute.value"
+            ].search_count([])
+            yield "<!-- Found %d product.template.attribute.value records -->\n" % ptav_count
+        except Exception as e:
+            yield "<!-- Error when fetching product.template.attribute.value records --> %s \n" % e
 
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
