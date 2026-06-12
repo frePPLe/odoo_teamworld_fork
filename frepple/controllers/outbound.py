@@ -240,7 +240,7 @@ class exporter(object):
         # # if self.mode == 1:
         # #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
-        # yield from self.export_salesorders()
+        yield from self.export_salesorders()
 
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
@@ -2135,32 +2135,36 @@ class exporter(object):
         # Get all move ids
         # We only read the open ones
 
-        stock_moves_dict = {
-            i["id"]: i
-            for i in self.generator.getData(
-                "stock.move",
-                search=[
-                    (
+        try:
+            stock_moves_dict = {
+                i["id"]: i
+                for i in self.generator.getData(
+                    "stock.move",
+                    search=[
+                        (
+                            "state",
+                            "in",
+                            ["waiting", "partially_available", "assigned", "confirmed"],
+                        ),
+                        ("sale_line_id", "!=", False),
+                    ],
+                    fields=[
+                        "id",
+                        "move_orig_ids",
+                        "product_id",
+                        "date",
+                        "quantity",
+                        "procure_method",
+                        "product_uom_qty",
+                        "product_uom",
                         "state",
-                        "in",
-                        ["waiting", "partially_available", "assigned", "confirmed"],
-                    ),
-                    ("sale_line_id", "!=", False),
-                ],
-                fields=[
-                    "id",
-                    "move_orig_ids",
-                    "product_id",
-                    "date",
-                    "quantity",
-                    "procure_method",
-                    "product_uom_qty",
-                    "product_uom",
-                    "state",
-                    "move_line_ids",
-                ],
-            )
-        }
+                        "move_line_ids",
+                    ],
+                )
+            }
+        except Exception as e:
+            yield f"<!-- error when fetching stock moves {e} -->\n"
+            return
 
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
