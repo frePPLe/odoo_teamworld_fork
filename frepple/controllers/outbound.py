@@ -234,6 +234,7 @@ class exporter(object):
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
         yield from self.export_items()
+        return
 
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
         # # logger.debug("Exporting BOMs.")
@@ -252,7 +253,6 @@ class exporter(object):
             except Exception as e:
                 yield f"<!-- Error while exporting purchase orders: {e} -->\n"
                 yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
-            return
             try:
                 logger.debug("Exporting manufacturing orders.")
                 yield from self.export_manufacturingorders()
