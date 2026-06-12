@@ -2168,8 +2168,6 @@ class exporter(object):
 
         yield f"<!-- was able to pull the stock moves -->\n"
 
-        return
-
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
             for l in self.generator.getData(
@@ -2232,6 +2230,9 @@ class exporter(object):
                 ],
             )
         }
+
+        yield f"<!-- before the loop -->\n"
+        return
 
         for i in so_line:
             try:
