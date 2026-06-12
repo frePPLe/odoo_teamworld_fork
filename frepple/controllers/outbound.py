@@ -114,7 +114,7 @@ class Odoo_generator:
         limit=None,
         offset=0,
     ):
-        PAGE_SIZE = 1000
+        PAGE_SIZE = 500
 
         if search is None:
             search = []
