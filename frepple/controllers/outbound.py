@@ -235,8 +235,6 @@ class exporter(object):
         yield from self.export_item_hierarchy()
         yield from self.export_items()
 
-        return  # pull until we reach the items to see where the error comes from
-
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
         # # logger.debug("Exporting BOMs.")
         # # if self.mode == 1:
@@ -1097,14 +1095,6 @@ class exporter(object):
         for k, v in self.routes.items():
             if v.is_on_demand:
                 self.routes_mto.append(k)
-
-        try:
-            ptav_count = self.generator.env[
-                "product.template.attribute.value"
-            ].search_count([])
-            yield "<!-- Found %d product.template.attribute.value records -->\n" % ptav_count
-        except Exception as e:
-            yield "<!-- Error when fetching product.template.attribute.value records --> %s \n" % e
 
         # Teamworld: SQL query to quickly find the active products
         product_template_ids = set()
