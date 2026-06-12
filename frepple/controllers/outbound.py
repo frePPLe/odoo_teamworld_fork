@@ -2195,6 +2195,7 @@ class exporter(object):
                             ["waiting", "partially_available", "assigned", "confirmed"],
                         ),
                         ("sale_line_id", "!=", False),
+                        ("sale_line_id.order_id.state", "=", "sale"),
                     ],
                     fields=[
                         "id",
