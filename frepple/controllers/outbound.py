@@ -2166,6 +2166,10 @@ class exporter(object):
             yield f"<!-- error when fetching stock moves {e} -->\n"
             return
 
+        yield f"<!-- was able to pull the stock moves -->\n"
+
+        return
+
         def getReservedAndDoneQuantity(sm, include_reservations):
             reserved_quantity = 0
             for l in self.generator.getData(
