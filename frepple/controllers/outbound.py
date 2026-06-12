@@ -2243,6 +2243,7 @@ class exporter(object):
             ("product_id", "!=", False),
             ("state", "!=", "cancel"),
             ("order_id", "!=", False),
+            ("order_id.state", "=", "sale"),
         ]
 
         yield f"<!-- before the so call -->\n"
