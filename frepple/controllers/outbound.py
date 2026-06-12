@@ -114,7 +114,7 @@ class Odoo_generator:
         limit=None,
         offset=0,
     ):
-        PAGE_SIZE = 500
+        PAGE_SIZE = 1000
 
         if search is None:
             search = []
@@ -2287,6 +2287,9 @@ class exporter(object):
             ("state", "!=", "cancel"),
             ("order_id", "!=", False),
             ("order_id.state", "=", "sale"),
+            ("qty_to_deliver", ">", 0),
+            ("order_id.art_work_status.name", "=", "Out to Production"),
+            ("order_id.date_order", ">=", "2026-04-01"),
         ]
 
         yield f"<!-- before the so call -->\n"
