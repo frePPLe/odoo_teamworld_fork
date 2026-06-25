@@ -3316,6 +3316,7 @@ class exporter(object):
                         <stringproperty name="designers_ids" value=%s/>
                         <stringproperty name="log_note" value=%s/>
                         <stringproperty name="product_type" value=%s/>
+                        <stringproperty name="decoration_method_ids" value=%s/>
                         <flows>
                         """ % (
                         quoteattr("%s - %s" % (suboperation, wo.id)),
@@ -3332,6 +3333,9 @@ class exporter(object):
                         quoteattr(",".join(str(d.name) for d in i.designers_ids)),
                         quoteattr(i.log_note or ""),
                         quoteattr(i.product_type or ""),
+                        quoteattr(
+                            ",".join(str(d.name) for d in i.decoration_method_ids)
+                        ),
                     )
                     idx += 10
                     # dictionary needed as BOM in Odoo might have multiple lines with the same product
