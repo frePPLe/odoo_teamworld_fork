@@ -3280,13 +3280,13 @@ class exporter(object):
                     quoteattr(location),
                     "true" if i.is_rush_order else "false",
                     quoteattr(i.predefined_artwork or ""),
-                    quoteattr(",".join(str(d.name) for d in i.design_ids)),
+                    quoteattr(",".join(d.name for d in i.design_ids)),
                     quoteattr(i.pms_code_char or ""),
-                    quoteattr(",".join(str(d.name) for d in i.designers_ids)),
+                    quoteattr(",".join(d.name for d in i.designers_ids)),
                     quoteattr(i.log_note or ""),
                     quoteattr(i.product_type or ""),
                     quoteattr(i.art_state_id.name if i.art_state_id else ""),
-                    quoteattr(",".join(str(d.name) for d in i.decoration_method_ids)),
+                    quoteattr(",".join(d.name for d in i.decoration_method_ids)),
                 )
                 # Define operations for each WO
                 idx = 10
@@ -3328,14 +3328,12 @@ class exporter(object):
                         quoteattr(location),
                         "true" if i.is_rush_order else "false",
                         quoteattr(i.predefined_artwork or ""),
-                        quoteattr(",".join(str(d.name) for d in i.design_ids)),
+                        quoteattr(",".join(d.name for d in i.design_ids)),
                         quoteattr(i.pms_code_char or ""),
-                        quoteattr(",".join(str(d.name) for d in i.designers_ids)),
+                        quoteattr(",".join(d.name for d in i.designers_ids)),
                         quoteattr(i.log_note or ""),
                         quoteattr(i.product_type or ""),
-                        quoteattr(
-                            ",".join(str(d.name) for d in i.decoration_method_ids)
-                        ),
+                        quoteattr(",".join(d.name for d in i.decoration_method_ids)),
                     )
                     idx += 10
                     # dictionary needed as BOM in Odoo might have multiple lines with the same product
