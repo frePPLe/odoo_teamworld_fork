@@ -2289,7 +2289,7 @@ class exporter(object):
             ("order_id.state", "=", "sale"),
             ("qty_to_deliver", ">", 0),
             ("order_id.art_work_status.name", "=", "Out to Production"),
-            ("order_id.date_order", ">=", "2026-04-01"),
+            ("order_id.date_order", ">=", "2026-05-01"),
         ]
 
         yield f"<!-- before the so call -->\n"
