@@ -3273,6 +3273,7 @@ class exporter(object):
                 <stringproperty name="log_note" value=%s/>
                 <stringproperty name="product_type" value=%s/>
                 <stringproperty name="art_state" value=%s/>
+                <stringproperty name="decoration_method_ids" value=%s/>
                 <suboperations>""" % (
                     quoteattr(operation),
                     quoteattr(item["name"]),
@@ -3285,6 +3286,7 @@ class exporter(object):
                     quoteattr(i.log_note or ""),
                     quoteattr(i.product_type or ""),
                     quoteattr(i.art_state_id.name if i.art_state_id else ""),
+                    quoteattr(",".join(str(d.name) for d in i.decoration_method_ids)),
                 )
                 # Define operations for each WO
                 idx = 10
