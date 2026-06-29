@@ -311,6 +311,7 @@ class exporter(object):
         self.load_operation_types()
         logger.debug("Exporting customers.")
         yield from self.export_customers()
+        self.generator.env.cache.invalidate()
         if self.mode == 1:
             logger.debug("Exporting suppliers.")
             yield from self.export_suppliers()
@@ -324,6 +325,7 @@ class exporter(object):
         logger.debug("Exporting products.")
         yield from self.export_item_hierarchy()
         yield from self.export_items()
+        self.generator.env.cache.invalidate()
 
         # # Teamworld specific: no need to export the boms. We use the existing MO and WO only.
         # # logger.debug("Exporting BOMs.")
@@ -331,6 +333,7 @@ class exporter(object):
         # #     yield from self.export_boms()
         logger.debug("Exporting sales orders.")
         yield from self.export_salesorders()
+        self.generator.env.cache.invalidate()
 
         # # Uncomment the following lines to create forecast models in frepple
         # # logger.debug("Exporting forecast.")
@@ -346,6 +349,7 @@ class exporter(object):
             try:
                 logger.debug("Exporting manufacturing orders.")
                 yield from self.export_manufacturingorders()
+                self.generator.env.cache.invalidate()
             except Exception as e:
                 yield f"<!-- Error while exporting manufacturing orders: {e} -->\n"
                 yield f"<!-- Stack trace: {traceback.format_exc()} -->\n"
@@ -362,6 +366,7 @@ class exporter(object):
             else:
                 logger.debug("Exporting quantities on-hand.")
                 yield from self.export_onhand()
+                self.generator.env.cache.invalidate()
 
         # Footer
         yield "</plan>\n"
